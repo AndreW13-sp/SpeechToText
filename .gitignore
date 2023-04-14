@@ -1,0 +1,18 @@
+# VS Code specific
+.DS_Store
+
+# Python Cache Folders
+__pycache__
+
+# Virtualenv
+venv/
+env/
+
+
+# Local testing files
+test.py
+
+# Music output files
+*.aif
+*.mp3
+*.wav

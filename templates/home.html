@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Text To Speech Converter App</title>
+   <!-- Bootstrap Integration -->
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+   <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
+   <style>
+      body { 
+         background-color:#efc8b1;
+      }
+      .navbar{
+         background-color:#514644;
+      }
+      .navbar a{
+         color: white;
+      }
+   </style>
+</head>
+<body>
+   <nav class="navbar">
+      <div class="container-fluid">
+        <a href="#" class="navbar-brand">Convert</a>
+      </div>
+    </nav>
+   <div class="container">
+      <form id="mySpeechfile" class="my-4">
+         <div class="mb-3">
+            <label for="file" class="form-label">Select File (Audio Only)</label>
+            <input type="file" name="audioFile" id="file" class="form-control" accept="audio/*" />
+            <input type="text" id="outputText" class="form-control mt-2" disabled style="height:250px">
+         </div>
+         <button type="submit" class="btn btn-primary" style="background-color:#514644">Convert Speech To Text</button>
+      </form>
+      <hr>
+      <div>
+         <textarea id="speechTextInput" class="form-control" cols="30" rows="10"></textarea>
+         <button id="convertToSpeechBtn" class="btn btn-primary mt-2" style="background-color: #514644;">Convert Text To Speech</button>
+      </div>
+   </div>
+   
+   <script type="text/javascript" charset="utf-8">
+      const fileUploader = document.getElementById("mySpeechfile");
+      const convertToSpeechBtn = document.getElementById("convertToSpeechBtn");
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const outputText = document.getElementById("outputText");
+      let audio;
+      
+      function sendText(text) {
+         fetch("/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+               action: "TextToSpeech",
+               text: text || "Default text!"
+            })
+         })
+         .then(res => res.arrayBuffer())
+         .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
+         .then(decodedAudio => audioPlayback(decodedAudio))
+         .catch(err => console.error(err));
+      }
+      
+      function audioPlayback(audioData) {
+         const sound = audioCtx.createBufferSource();
+         sound.buffer = audioData;
+         sound.connect(audioCtx.destination);
+         sound.start(audioCtx.currentTime);
+      }
+      
+      fileUploader.addEventListener("submit", function (event) {
+         event.preventDefault();
+         
+         const formData = new FormData();
+         formData.append("action", "SpeechToText");
+         formData.append("speech_file", this.file.files[0], { type: "audio/wav" });
+         
+         // console.assert(false);
+         
+         fetch("/upload", { method: "POST", body: formData })
+            .then(res => res.json())
+            .then(data => {
+               if (outputText) {
+                  alert("Success!");
+                  outputText.value = data.transcribed_speech;
+               }
+            })
+            .catch(err => console.error(err));
+      });
+      
+      convertToSpeechBtn.addEventListener("click", (event) => {
+         const mytext = document.getElementById("speechTextInput");
+         sendText(mytext.value);
+         audioPlayback();
+      });
+   </script>
+</body>
+</html>
